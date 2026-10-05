@@ -1,0 +1,26 @@
+rules_version = '2';
+
+// DevMemory — Cloud Storage Security Rules
+// Attachments live at users/{uid}/attachments/{memoryId}/{fileName}.
+// Only the owner can read, upload or delete. Uploads must be raster images under 5 MB.
+// SVG is intentionally not allowed (it can carry script).
+
+service firebase.storage {
+  match /b/{bucket}/o {
+    function isOwner(userId) {
+      return request.auth != null && request.auth.uid == userId;
+    }
+
+    match /users/{userId}/attachments/{memoryId}/{fileName} {
+      allow read, delete: if isOwner(userId);
+      allow create, update: if isOwner(userId)
+        && request.resource.size < 5 * 1024 * 1024
+        && request.resource.contentType.matches('image/(png|jpeg|gif|webp)');
+    }
+
+    // Everything else is denied.
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

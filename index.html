@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>DevMemory — your developer brain, searchable</title>
+    <meta name="description" content="Remember bugs, solutions, snippets, commands and everything you learn while building software." />
+    <meta name="theme-color" content="#161a22" />
+    <meta name="color-scheme" content="dark light" />
+    <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
+    <link rel="apple-touch-icon" href="./icons/icon-192.png" />
+    <link rel="manifest" href="./manifest.json" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="referrer" content="strict-origin-when-cross-origin" />
+    <script>
+      // Apply the saved theme before first paint (no flash). Only reads a UI preference.
+      (function () {
+        try {
+          var p = JSON.parse(localStorage.getItem('devmemory:prefs') || '{}').theme || 'dark';
+          if (p === 'system') p = matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+          document.documentElement.dataset.theme = p === 'light' ? 'light' : 'dark';
+          if (p === 'light') document.querySelector('meta[name="theme-color"]').setAttribute('content', '#f4f6f9');
+        } catch (e) {}
+      })();
+    </script>
+    <style>
+      html[data-theme='dark'] body { background: #161a22; }
+      html[data-theme='light'] body { background: #f4f6f9; }
+    </style>
+  </head>
+  <body>
+    <div id="app">
+      <div class="boot" role="status" aria-label="Loading DevMemory"><div class="boot__mark"></div></div>
+    </div>
+    <noscript>DevMemory needs JavaScript to run.</noscript>
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
