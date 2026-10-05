@@ -1,0 +1,84 @@
+/* DevMemory design tokens. Dark is the default theme. */
+:root,
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --bg: #161a22;
+  --surface: #1c212b;
+  --surface-2: #232a36;
+  --surface-3: #2a3240;
+  --border: #2e3644;
+  --border-strong: #404a5c;
+  --text: #e3e7ee;
+  --text-2: #c3c9d4;
+  --muted: #8f99ab;
+  --accent: #f2b544;
+  --accent-text: #f5c56a;
+  --accent-soft: rgba(242, 181, 68, 0.13);
+  --on-accent: #1f1705;
+  --link: #8fb2ff;
+  --focus: #8fb2ff;
+  --success: #5ccaa0;
+  --success-soft: rgba(92, 202, 160, 0.14);
+  --danger: #f2706b;
+  --danger-soft: rgba(242, 112, 107, 0.13);
+  --warn: #f2b544;
+  --info: #8fb2ff;
+  --code-bg: #12161d;
+  --overlay: rgba(8, 10, 14, 0.62);
+  --shadow-pop: 0 12px 40px rgba(0, 0, 0, 0.45), 0 2px 6px rgba(0, 0, 0, 0.3);
+  --sk: #262d39;
+  --sk-shine: #2e3644;
+  --tag-bg: #232a36;
+  --hl-keyword: #f2b544; --hl-string: #9fd6a8; --hl-number: #f0a17a; --hl-comment: #6d7789; --hl-title: #8fb2ff; --hl-attr: #c7a6ff; --hl-builtin: #7fd4e0; --hl-meta: #9aa4b5;
+}
+
+:root[data-theme='light'] {
+  color-scheme: light;
+  --bg: #f4f6f9;
+  --surface: #ffffff;
+  --surface-2: #eef1f5;
+  --surface-3: #e5e9ef;
+  --border: #dde2ea;
+  --border-strong: #c4ccd8;
+  --text: #1a1f29;
+  --text-2: #353d4b;
+  --muted: #5d6777;
+  --accent: #f0ad2e;
+  --accent-text: #8a5800;
+  --accent-soft: rgba(240, 173, 46, 0.16);
+  --on-accent: #231800;
+  --link: #2a59d6;
+  --focus: #2a59d6;
+  --success: #17805a;
+  --success-soft: rgba(23, 128, 90, 0.1);
+  --danger: #c8322c;
+  --danger-soft: rgba(200, 50, 44, 0.08);
+  --warn: #9a6300;
+  --info: #2a59d6;
+  --code-bg: #f6f7f9;
+  --overlay: rgba(20, 26, 36, 0.38);
+  --shadow-pop: 0 12px 36px rgba(20, 30, 50, 0.18), 0 2px 6px rgba(20, 30, 50, 0.08);
+  --sk: #e8ecf1;
+  --sk-shine: #f3f5f8;
+  --tag-bg: #eef1f5;
+  --hl-keyword: #9a5b00; --hl-string: #1f7a3b; --hl-number: #b04a1a; --hl-comment: #7a8494; --hl-title: #2a59d6; --hl-attr: #7a3fc0; --hl-builtin: #0a7586; --hl-meta: #5d6777;
+}
+
+:root {
+  --font: 'IBM Plex Sans', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --mono: 'IBM Plex Mono', ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace;
+  --fs-xs: 0.75rem;
+  --fs-sm: 0.8125rem;
+  --fs-base: 0.9375rem;
+  --fs-md: 1.0625rem;
+  --fs-lg: 1.3125rem;
+  --fs-xl: 1.75rem;
+  --fs-2xl: 2.5rem;
+  --fs-hero: clamp(2.4rem, 5.6vw, 4rem);
+  --r-panel: 10px;
+  --r-ctl: 7px;
+  --r-code: 8px;
+  --sidebar-w: 236px;
+  --topbar-h: 56px;
+  --ease: cubic-bezier(0.2, 0.7, 0.2, 1);
+}

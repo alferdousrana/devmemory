@@ -1,0 +1,199 @@
+rules_version = '2';
+
+// DevMemory — Cloud Firestore Security Rules
+//
+// Model: every document lives under /users/{uid}/... and only that uid can
+// read or write it. On top of ownership, each collection validates:
+//   • the exact set of allowed fields (keys().hasOnly) — mirrors src/data/schema.js
+//   • required fields and types, enum values, string/list size limits
+//   • createdAt/updatedAt are real timestamps
+//   • an optional userId field always equals the path uid
+// Anything not matched below (other paths, unknown subcollections) is denied.
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ---------- helpers ----------
+    function signedIn() { return request.auth != null; }
+    function isOwner(userId) { return signedIn() && request.auth.uid == userId; }
+
+    function optStr(d, k, max) { return !(k in d) || (d[k] is string && d[k].size() <= max); }
+    function reqStr(d, k, max) { return (k in d) && d[k] is string && d[k].size() > 0 && d[k].size() <= max; }
+    function optList(d, k, max) { return !(k in d) || (d[k] is list && d[k].size() <= max); }
+    function optBool(d, k) { return !(k in d) || d[k] is bool; }
+    function optNum(d, k) { return !(k in d) || d[k] is number; }
+    function optTime(d, k) { return !(k in d) || d[k] == null || d[k] is timestamp; }
+    function optEnum(d, k, values) { return !(k in d) || d[k] in values; }
+    function optUrl(d, k) {
+      return !(k in d) || d[k] == '' || (d[k] is string && d[k].size() <= 2000 && d[k].matches('^https?://.+'));
+    }
+    function stamps(d) { return d.createdAt is timestamp && d.updatedAt is timestamp; }
+    function ownedBy(d, userId) { return !('userId' in d) || d.userId == userId; }
+
+    function memoryTypes() {
+      return ['BUG','SOLUTION','CONCEPT','COMMAND','SNIPPET','API','DATABASE','DOCKER','GIT','LINUX',
+              'NETWORKING','ARCHITECTURE','PROJECT','LEARNING','BOOKMARK','OTHER'];
+    }
+
+    // ---------- validators (field lists mirror src/data/schema.js) ----------
+    function validProfile(userId) {
+      let d = request.resource.data;
+      return d.keys().hasOnly(['uid','displayName','email','photoURL','createdAt','updatedAt',
+               'onboardingCompleted','primaryTechnologies','currentProjects','theme','timezone',
+               'streak','longestStreak','lastActiveAt'])
+        && d.uid == userId
+        && optStr(d, 'displayName', 120) && optStr(d, 'email', 320) && optStr(d, 'photoURL', 2000)
+        && optBool(d, 'onboardingCompleted') && optList(d, 'primaryTechnologies', 40)
+        && optList(d, 'currentProjects', 20) && optEnum(d, 'theme', ['dark','light','system'])
+        && optStr(d, 'timezone', 80) && optNum(d, 'streak') && optNum(d, 'longestStreak')
+        && optTime(d, 'lastActiveAt') && stamps(d);
+    }
+
+    function validSettings() {
+      let d = request.resource.data;
+      return d.keys().hasOnly(['reviewReminders','dailyReviewGoal','defaultMemoryType','editorTabSize','createdAt','updatedAt'])
+        && optBool(d, 'reviewReminders') && optNum(d, 'dailyReviewGoal')
+        && optEnum(d, 'defaultMemoryType', memoryTypes()) && optNum(d, 'editorTabSize') && stamps(d);
+    }
+
+    function validMemory(userId) {
+      let d = request.resource.data;
+      return d.keys().hasOnly(['userId','type','title','content','problem','errorMessage','stackTrace',
+               'environment','rootCause','solution','commands','language','framework','projectId','tags',
+               'sourceUrl','isFavorite','isPrivate','status','createdAt','updatedAt','lastReviewedAt',
+               'nextReviewAt','reviewCount','confidence','searchKeywords','attachments'])
+        && ownedBy(d, userId)
+        && reqStr(d, 'title', 300) && d.type in memoryTypes()
+        && optStr(d, 'content', 50000) && optStr(d, 'problem', 10000) && optStr(d, 'errorMessage', 10000)
+        && optStr(d, 'stackTrace', 50000) && optStr(d, 'environment', 2000) && optStr(d, 'rootCause', 10000)
+        && optStr(d, 'solution', 20000) && optList(d, 'commands', 50) && optStr(d, 'language', 40)
+        && optStr(d, 'framework', 60) && optStr(d, 'projectId', 128) && optList(d, 'tags', 30)
+        && optUrl(d, 'sourceUrl') && optBool(d, 'isFavorite') && optBool(d, 'isPrivate')
+        && optEnum(d, 'status', ['active','unresolved','investigating','resolved','archived'])
+        && optTime(d, 'lastReviewedAt') && optTime(d, 'nextReviewAt') && optNum(d, 'reviewCount')
+        && optNum(d, 'confidence') && optList(d, 'searchKeywords', 200) && optList(d, 'attachments', 10)
+        && stamps(d);
+    }
+
+    function validSnippet(userId) {
+      let d = request.resource.data;
+      return d.keys().hasOnly(['userId','title','description','code','language','tags','projectId',
+               'isFavorite','copyCount','lastUsedAt','searchKeywords','createdAt','updatedAt'])
+        && ownedBy(d, userId)
+        && reqStr(d, 'title', 300) && optStr(d, 'description', 5000) && optStr(d, 'code', 100000)
+        && optStr(d, 'language', 40) && optList(d, 'tags', 30) && optStr(d, 'projectId', 128)
+        && optBool(d, 'isFavorite') && optNum(d, 'copyCount') && optTime(d, 'lastUsedAt')
+        && optList(d, 'searchKeywords', 200) && stamps(d);
+    }
+
+    function validCommand(userId) {
+      let d = request.resource.data;
+      return d.keys().hasOnly(['userId','command','description','example','os','category','tags',
+               'projectId','isFavorite','copyCount','lastUsedAt','searchKeywords','createdAt','updatedAt'])
+        && ownedBy(d, userId)
+        && reqStr(d, 'command', 5000) && optStr(d, 'description', 5000) && optStr(d, 'example', 5000)
+        && optEnum(d, 'os', ['any','linux','macos','windows']) && optStr(d, 'category', 40)
+        && optList(d, 'tags', 30) && optStr(d, 'projectId', 128) && optBool(d, 'isFavorite')
+        && optNum(d, 'copyCount') && optTime(d, 'lastUsedAt') && optList(d, 'searchKeywords', 200)
+        && stamps(d);
+    }
+
+    function validProject(userId) {
+      let d = request.resource.data;
+      return d.keys().hasOnly(['userId','name','description','repoUrl','liveUrl','techStack','environment',
+               'runCommand','backendCommand','frontendCommand','importantCommands','architecture',
+               'deployment','database','knownBugs','status','isFavorite','tags','searchKeywords',
+               'createdAt','updatedAt'])
+        && ownedBy(d, userId)
+        && reqStr(d, 'name', 200) && optStr(d, 'description', 5000) && optUrl(d, 'repoUrl')
+        && optUrl(d, 'liveUrl') && optList(d, 'techStack', 30) && optStr(d, 'environment', 10000)
+        && optStr(d, 'runCommand', 1000) && optStr(d, 'backendCommand', 1000)
+        && optStr(d, 'frontendCommand', 1000) && optList(d, 'importantCommands', 50)
+        && optStr(d, 'architecture', 20000) && optStr(d, 'deployment', 20000)
+        && optStr(d, 'database', 5000) && optStr(d, 'knownBugs', 10000)
+        && optEnum(d, 'status', ['active','paused','shipped','archived']) && optBool(d, 'isFavorite')
+        && optList(d, 'tags', 30) && optList(d, 'searchKeywords', 200) && stamps(d);
+    }
+
+    function validBookmark(userId) {
+      let d = request.resource.data;
+      return d.keys().hasOnly(['userId','title','url','description','tags','category','notes','projectId',
+               'isFavorite','searchKeywords','createdAt','updatedAt'])
+        && ownedBy(d, userId)
+        && reqStr(d, 'title', 300) && ('url' in d) && d.url is string && d.url.matches('^https?://.+')
+        && d.url.size() <= 2000 && optStr(d, 'description', 5000) && optList(d, 'tags', 30)
+        && optEnum(d, 'category', ['documentation','github','stackoverflow','youtube','blog','tutorial','other'])
+        && optStr(d, 'notes', 10000) && optStr(d, 'projectId', 128) && optBool(d, 'isFavorite')
+        && optList(d, 'searchKeywords', 200) && stamps(d);
+    }
+
+    function validCollection(userId) {
+      let d = request.resource.data;
+      return d.keys().hasOnly(['userId','name','description','icon','items','createdAt','updatedAt'])
+        && ownedBy(d, userId)
+        && reqStr(d, 'name', 120) && optStr(d, 'description', 2000) && optStr(d, 'icon', 16)
+        && optList(d, 'items', 500) && stamps(d);
+    }
+
+    function validReview(userId) {
+      let d = request.resource.data;
+      return d.keys().hasOnly(['userId','memoryId','rating','intervalDays','reviewedAt','createdAt','updatedAt'])
+        && ownedBy(d, userId)
+        && reqStr(d, 'memoryId', 128) && d.rating in ['again','hard','good','easy']
+        && optNum(d, 'intervalDays') && optTime(d, 'reviewedAt') && stamps(d);
+    }
+
+    function validActivity(userId) {
+      let d = request.resource.data;
+      return d.keys().hasOnly(['userId','type','message','refType','refId','createdAt','updatedAt'])
+        && ownedBy(d, userId)
+        && reqStr(d, 'type', 40) && reqStr(d, 'message', 300) && optStr(d, 'refType', 40)
+        && optStr(d, 'refId', 128) && stamps(d);
+    }
+
+    // ---------- paths ----------
+    match /users/{userId} {
+      allow read, delete: if isOwner(userId);
+      allow create, update: if isOwner(userId) && validProfile(userId);
+
+      match /settings/{settingId} {
+        allow read, delete: if isOwner(userId);
+        allow create, update: if isOwner(userId) && settingId == 'profile' && validSettings();
+      }
+      match /memories/{id} {
+        allow read, delete: if isOwner(userId);
+        allow create, update: if isOwner(userId) && validMemory(userId);
+      }
+      match /snippets/{id} {
+        allow read, delete: if isOwner(userId);
+        allow create, update: if isOwner(userId) && validSnippet(userId);
+      }
+      match /commands/{id} {
+        allow read, delete: if isOwner(userId);
+        allow create, update: if isOwner(userId) && validCommand(userId);
+      }
+      match /projects/{id} {
+        allow read, delete: if isOwner(userId);
+        allow create, update: if isOwner(userId) && validProject(userId);
+      }
+      match /bookmarks/{id} {
+        allow read, delete: if isOwner(userId);
+        allow create, update: if isOwner(userId) && validBookmark(userId);
+      }
+      match /collections/{id} {
+        allow read, delete: if isOwner(userId);
+        allow create, update: if isOwner(userId) && validCollection(userId);
+      }
+      match /reviews/{id} {
+        allow read, delete: if isOwner(userId);
+        // Review history is append-only: no edits after the fact.
+        allow create: if isOwner(userId) && validReview(userId);
+      }
+      match /activity/{id} {
+        allow read, delete: if isOwner(userId);
+        // Activity log is append-only.
+        allow create: if isOwner(userId) && validActivity(userId);
+      }
+    }
+  }
+}
