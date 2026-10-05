@@ -1,0 +1,45 @@
+{
+  "indexes": [
+    {
+      "collectionGroup": "memories",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "status", "order": "ASCENDING" },
+        { "fieldPath": "nextReviewAt", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "memories",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "projectId", "order": "ASCENDING" },
+        { "fieldPath": "updatedAt", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "memories",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "type", "order": "ASCENDING" },
+        { "fieldPath": "updatedAt", "order": "DESCENDING" }
+      ]
+    }
+  ],
+  "fieldOverrides": [
+    {
+      "collectionGroup": "memories",
+      "fieldPath": "content",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "memories",
+      "fieldPath": "stackTrace",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "snippets",
+      "fieldPath": "code",
+      "indexes": []
+    }
+  ]
+}
